@@ -256,6 +256,9 @@ XFormParser.prototype.parseBoundElement = function(element, contextModel, outerB
     assert(nodesetAttribute != null || refAttribute != null, "missing @nodeset or @ref");
 
     var type  = (nodesetAttribute != null) ? "nodeset" : "ref";
+    if (element.nodeName.replace(/^.*:/, "") == "repeat")
+      type = "nodeset";
+
     var xpath = new XPath((nodesetAttribute != null) ? nodesetAttribute.value : refAttribute.value, element);
 
     var model = (contextModel != null ? contextModel : xform.models[0]);

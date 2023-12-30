@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+ <script type="text/javascript" src="https://cdn.jsdelivr.net/gh/emn178/js-sha256/build/sha256.min.js"/>
+
+ <script type="text/javascript" src="formfaces.js"/>
+ <link rel="stylesheet" type="text/css" href="formfaces.css"/>
+ <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+
+ <script type="text/javascript">
+  var extf = new XPathFunctionMap();
+  var xf_sha256 = new XPathFunction(sha256, XPathFunction.Context.NONE);
+  extf.registerFunction(new QName("sha256"), xf_sha256);
+  XPathContext.prototype.functionResolvers.push(extf);
+ </script>
+
+ <style type="text/css">
+  p { border: 1px solid gray; padding: 20px; }
+  dt { margin-bottom: -50px; }
+  dd { margin-left: 80px; }
+  span.xforms-trigger input[type="button"] { padding-right: 30px; }
+ </style>
+
+ <model xmlns="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events">
+  <instance>
+   <model xmlns="https://github.com/haael/FormFaces"/>
+  </instance>
+
+  <action ev:event="xforms-ready">
+   <send submission="index"/>
+  </action>
+  
+  <submission id="index" resource="index.html" method="get" replace="all"/>
+ </model>
+</head>
+
+<body>
+</body>
+
+</html>

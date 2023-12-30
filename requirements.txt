@@ -1,1 +1,3 @@
-jsmin
+rjsmin
+aiopath
+aiohttp

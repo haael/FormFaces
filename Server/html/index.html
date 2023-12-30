@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+ <model xmlns="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events">
+  <instance>
+   <model xmlns="https://github.com/haael/FormFaces"/>
+  </instance>
+
+  <action ev:event="xforms-ready">
+   <send submission="model"/>
+  </action>
+
+  <submission id="model" resource="model.xml" method="post" replace="instance">
+   <!--form:action ev:event="xforms-submit-done" if="instance('login')//am:unauthorized">
+    <form:send submission="login"/>
+   </form:action-->
+  </submission>
+
+ </model>
+</head>
+
+<body xmlns:form="http://www.w3.org/2002/xforms" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:mm="https://github.com/haael/FormFaces">
+
+ <h1>Hello void</h1>
+
+ <dl>
+  <form:repeat ref="/mm:model/mm:value">
+
+   <dt>
+    <form:trigger>
+     <form:label>
+      *
+     </form:label>
+
+     <form:action ev:event="DOMActivate">
+      <form:send submission="model"/>
+     </form:action>
+    </form:trigger>
+   </dt>
+
+   <dd>
+    <form:input ref=".">
+     <form:label>
+      <form:output ref="@id"/>
+     </form:label>
+
+     <form:action ev:event="DOMFocusOut">
+      <form:send submission="model"/>
+     </form:action>
+    </form:input>
+   </dd>
+
+  </form:repeat>
+ </dl>
+
+</body>
+
+</html>

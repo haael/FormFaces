@@ -101,6 +101,6 @@ if __name__ == '__main__':
 		dst.write(jsmin("\n\n".join(content)))
 	
 	with Path('formfaces.min.css').open('w') as dst:
-		dst.write(Path('Examples/Test Pages/xforms.css').read_text('utf-8'))
+		dst.write(Path('formfaces.css').read_text('utf-8'))
 
 
