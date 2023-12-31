@@ -8,8 +8,8 @@ function XFormParser() {
   this.bindings = [];
 };
 
-XFormParser.prototype.parse = function(xmlDocument) {
-  this.parseXForm(xmlDocument.documentElement);
+XFormParser.prototype.parse = async function(xmlDocument) {
+  await this.parseXForm(xmlDocument.documentElement);
 };
 
 

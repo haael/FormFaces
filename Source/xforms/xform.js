@@ -38,123 +38,127 @@ function XForm(xmlDocument) {
   };
 }) ();
 
-XForm.initialize = function() {
+
+function sleep1ms() {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => { resolve(); }, 1)
+    });
+}
+
+XForm.initialize = async function() {
   //var start = new Date().getTime();
+
+  await sleep1ms();
+
+  var overlay = document.createElement("div");
+  var glass   = document.createElement("div");
+  var message = document.createElement("span");
+
+  overlay.id            = "-ff-overlay";
+  glass  .style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
+                        + "background: white; opacity: 0.75; filter: alpha(opacity=75); overflow: hidden";
+  message.style.cssText = "font: 24pt bold 'Helvetica', sans-serif; background: gray; color: white; "
+                        + "padding: 4px 8px; border: 9px double white";
+
+  document.body.appendChild(overlay);
+  overlay      .appendChild(glass);
+  message      .appendChild(document.createTextNode("Loading..."));
   
-  // executeSequentially is used to improve perceived performance by giving a
-  // chance for the browser to redraw the page and respond to user input between
-  // function calls. It also resets the browser timeouts.
-  executeSequentially(
-    function() {
-      var overlay = document.createElement("div");
-      var glass   = document.createElement("div");
-      var message = document.createElement("span");
+  if (userAgent.isInternetExplorer) {
+    message.style.position   = "absolute";
+    message.style.visibility = "hidden";
 
-      overlay.id            = "-ff-overlay";
-      glass  .style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
-                            + "background: white; opacity: 0.75; filter: alpha(opacity=75); overflow: hidden";
-      message.style.cssText = "font: 24pt bold 'Helvetica', sans-serif; background: gray; color: white; "
-                            + "padding: 4px 8px; border: 9px double white";
+    message.style.top        = ((document.documentElement.clientHeight - message.clientHeight) * 0.40) + "px";
+    message.style.left       = ((document.documentElement.clientWidth  - message.clientWidth)  * 0.50) + "px";
+    message.style.visibility = "visible";
 
-      document.body.appendChild(overlay);
-      overlay      .appendChild(glass);
-      message      .appendChild(document.createTextNode("Loading..."));
-      
-      if (userAgent.isInternetExplorer) {
-        message.style.position   = "absolute";
-        message.style.visibility = "hidden";
-        
-        setTimeout(function() {
-          message.style.top        = ((document.documentElement.clientHeight - message.clientHeight) * 0.40) + "px";
-          message.style.left       = ((document.documentElement.clientWidth  - message.clientWidth)  * 0.50) + "px";
-          message.style.visibility = "visible";
-        }, 1);
-        
-        overlay.appendChild(message);
+    await sleep1ms();
+    
+    overlay.appendChild(message);
 
-        document.body.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0";
-      }
-      else {
-        var outside = document.createElement("div");
-        var middle  = document.createElement("div");
-        var inside  = document.createElement("div");
-        
-        // Vertical centering courtesy of http://www.jakpsatweb.cz/css/css-vertical-center-solution.html.
-        outside.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%";
-        middle .style.cssText = "display: table; width: 100%; height: 100%; overflow: hidden";
-        inside .style.cssText = "display: table-cell; vertical-align: middle; text-align: center";
+    document.body.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0";
+  }
+  else {
+    var outside = document.createElement("div");
+    var middle  = document.createElement("div");
+    var inside  = document.createElement("div");
+    
+    // Vertical centering courtesy of http://www.jakpsatweb.cz/css/css-vertical-center-solution.html.
+    outside.style.cssText = "position: absolute; top: 0; left: 0; width: 100%; height: 100%";
+    middle .style.cssText = "display: table; width: 100%; height: 100%; overflow: hidden";
+    inside .style.cssText = "display: table-cell; vertical-align: middle; text-align: center";
 
-        overlay.appendChild(outside);
-        outside.appendChild(middle);
-        middle .appendChild(inside);
-        inside .appendChild(message);
-      }
-    },
+    overlay.appendChild(outside);
+    outside.appendChild(middle);
+    middle .appendChild(inside);
+    inside .appendChild(message);
+  }
 
-    function() {
-      // Parse the document.
-      if (xform == null) {
-        xform = new XForm(xmlLoadURI(window.location.href));
-      }
-    },
+  await sleep1ms();
 
-    function() {
-      XForm.startTimer();
+  // Parse the document.
+  if (xform == null) {
+    xform = new XForm(await xmlLoadURI(window.location.href));
+  }
 
-      new XFormParser().parse(xform.xmlDocument);
+  await sleep1ms();
 
-      //XForm.alertTime("Parsed in %t seconds.");
-    },
+  XForm.startTimer();
 
-    function() {
-      xform.render();
+  await new XFormParser().parse(xform.xmlDocument);
 
-      //XForm.alertTime("Page rendered in %t seconds.");
-    },
+  //XForm.alertTime("Parsed in %t seconds.");
 
-    function() {
-      var modelLen = xform.models.length;
-      for (var i = 0; i < modelLen; ++i) {
-        var model = xform.models[i];
+  await sleep1ms();
 
-        model.rebuild    ();
-        model.recalculate();
-        model.revalidate ();
-        model.refresh    ();
+  xform.render();
 
-        XmlEvent.dispatch(model.htmlNode, "xforms-model-construct");
-        XmlEvent.dispatch(model.htmlNode, "xforms-model-construct-done");
-      }
+  //XForm.alertTime("Page rendered in %t seconds.");
 
-      //XForm.alertTime("Models rebuilt in %t seconds.");
+  await sleep1ms();
 
-      for (var i = 0; i < modelLen; ++i) {
-        XmlEvent.dispatch(xform.models[i].htmlNode, "xforms-ready");
-      }
-      
-      //alert("Time is: " + (new Date().getTime() - start));
-    },
+  var modelLen = xform.models.length;
+  for (var i = 0; i < modelLen; ++i) {
+    var model = xform.models[i];
 
-    function() {
-      var overlay = document.getElementById("-ff-overlay");
-      
-      if (overlay != null) {
-        document.body.removeChild(overlay);
-      }
-      
-      if (userAgent.isInternetExplorer) {
-        document.body.style.cssText = "";//"position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0";
-      }
-    }
-  );
+    model.rebuild    ();
+    model.recalculate();
+    model.revalidate ();
+    model.refresh    ();
+
+    XmlEvent.dispatch(model.htmlNode, "xforms-model-construct");
+    XmlEvent.dispatch(model.htmlNode, "xforms-model-construct-done");
+  }
+
+  //XForm.alertTime("Models rebuilt in %t seconds.");
+
+  for (var i = 0; i < modelLen; ++i) {
+    XmlEvent.dispatch(xform.models[i].htmlNode, "xforms-ready");
+  }
+  
+  //alert("Time is: " + (new Date().getTime() - start));
+
+  await sleep1ms();
+
+  var overlay = document.getElementById("-ff-overlay");
+  
+  if (overlay != null) {
+    document.body.removeChild(overlay);
+  }
+  
+  if (userAgent.isInternetExplorer) {
+    document.body.style.cssText = ""; //"position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0";
+  }
+
+  await sleep1ms();
 };
 
 
-XFormParser.prototype.parseXForm = function(element) {
-                   this    .parseModels  (element); // XForm.alertTime("Models parsed in %t seconds.");
-  xform.controls = this    .parseControls(element); // XForm.alertTime("Controls parsed in %t seconds.");
-  xform.actions  = this    .parseActions (element); // XForm.alertTime("Actions parsed in %t seconds.");
-  xform.events   = XmlEvent.parseEvents  (element); // XForm.alertTime("Events parsed in %t seconds.");
+XFormParser.prototype.parseXForm = async function(element) {
+                   await this    .parseModels  (element); // XForm.alertTime("Models parsed in %t seconds.");
+  xform.controls =       this    .parseControls(element); // XForm.alertTime("Controls parsed in %t seconds.");
+  xform.actions  =       this    .parseActions (element); // XForm.alertTime("Actions parsed in %t seconds.");
+  xform.events   = await XmlEvent.parseEvents  (element); // XForm.alertTime("Events parsed in %t seconds.");
 };
 
 

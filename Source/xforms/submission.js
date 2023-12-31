@@ -205,7 +205,7 @@ XFormParser.prototype.parseSubmissionIncludeNamespacePrefixes = function(element
 };
 
 
-XFormSubmission.prototype.submit = function() {
+XFormSubmission.prototype.submit = async function() {
   var graph       = this.model.graph;
   var boundNode   = this.bind.defaultBinding.boundNodes[0];
   var boundVertex = graph.getVertex(boundNode, "text");
@@ -268,123 +268,9 @@ XFormSubmission.prototype.submit = function() {
   }
   
   //var request = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-  var request = userAgent.isInternetExplorer ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest(); 
+  //var request = userAgent.isInternetExplorer ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest(); 
   var self    = this;
-  
-  request.onreadystatechange = functionCall(monitor, function() {
-    if (request.readyState != 4) {
-      return;
-    }
     
-    status("Response: " + request.status + " " + request.statusText);
-    status("Headers:  " + (request.getAllResponseHeaders() != null ? request.getAllResponseHeaders() : ""));
-    status("Content:  " + request.responseText);
-      
-    // 200 is the HTTP success status code. 0 is the status code for local files.
-    if (request.status != 200 && request.status != 0) {
-      status("Status code is = " + request.status);
-      XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
-      return;
-    }
-    
-    if (request.responseText != "" && self.replace != "none") {
-      switch (self.replace) {
-        case "instance":
-          try {
-            // Check that the response body is XML.
-            var contentType = request.getResponseHeader("Content-Type");
-            
-            if (!contentType.match(/(^$|[\/+]xml(;.*)?$)/)) {
-              status("Non-XML content type: " + contentType);
-              
-              XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
-              return;
-            }
-            
-            var responseXml = xmlLoadDocument(request.responseText, true);
-                  
-            if (boundNode.nodeType == 9) {
-              boundNode = boundNode.documentElement;
-            }
-            
-            // If replacing the entire document, don't use replaceChild as that doesn't work in Opera.
-            if (boundNode == boundNode.ownerDocument.documentElement) {
-              // Find the instance boundNode is from and replace its XML document.
-              var instances = self.model.instances.length;
-              for (var i = 0; i < instances; i++) {
-                var instance = self.model.instances[i];
-                
-                if (instance.document == boundNode.ownerDocument) {
-                  instance.document = responseXml;
-                  break;
-                }
-              }
-            }
-            else {
-              var responseNode = xmlImportNode(boundNode.ownerDocument, responseXml.documentElement, true);
-              
-              boundNode.parentNode.replaceChild(responseNode, boundNode);
-            }
-            
-            XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-rebuild");
-            XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-recalculate");
-            XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-revalidate");
-            XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-refresh");
-
-            break;
-          }
-          catch (exception) {
-            status("Exception thrown during submission: " + exception);
-            XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
-            return;
-          }
-          
-        case "all":
-          try {
-            var responseXml = xmlLoadDocument(request.responseText, true);
-            
-            if (new XPath("boolean(xhtml:html)").evaluate(responseXml)) {
-              xform = new XForm(responseXml);
-              XForm.initialize();
-              
-              break;
-            }
-            
-            status("Response is valid XML but not XHTML.");
-          }
-          catch (exception) {
-            status("Failed to parse response as XML (" + exception + ").");
-          }
-          var head = request.responseText.replace(/[\s\S]*<head[\s\S]?>/i,   "")
-                                         .replace(/<\/head[\s\S]?>[\s\S]*/i, "");
-          var body = request.responseText.replace(/[\s\S]*<body[\s\S]?>/i,   "")
-                                         .replace(/<\/body[\s\S]?>[\s\S]*/i, "");
-                                         
-          if (userAgent.isInternetExplorer) {
-            document.body.innerHTML = body;
-          }
-          else {
-            while (document.documentElement.hasChildNodes()) {
-              document.documentElement.removeChild(document.documentElement.firstChild);
-            }
-          
-            document.documentElement.appendChild(document.createElement("head"));
-            document.documentElement.appendChild(document.createElement("body"));
-            
-            document.documentElement.childNodes[0].innerHTML = head;
-            document.documentElement.childNodes[1].innerHTML = body;
-          }
-          status(xmlSerialize(document));
-          break;
-          
-        default:
-          assert(false, 'Unrecognized replace option: "' + self.replace + '".');
-      }
-    }
-    
-    XmlEvent.dispatch(self.htmlNode, "xforms-submit-done");
-  });
-  
   try {
     var url = this.action;
     
@@ -398,21 +284,139 @@ XFormSubmission.prototype.submit = function() {
     status("Request: " + method + " " + url);
     status("Content: " + content);
     
-    request.open            (method, url);
-    request.setRequestHeader("Content-Type", this.mediaType);
-    request.setRequestHeader("If-Modified-Since", "Thu, 1 Jan 1970 00:00:00 GMT");
-    request.send            (content);
+    //request.open            (method, url);
+    //request.setRequestHeader("Content-Type", this.mediaType);
+    //request.setRequestHeader("If-Modified-Since", "Thu, 1 Jan 1970 00:00:00 GMT");
+    //request.send            (content);
+    
+    var request = null;
+    if (method == "GET")
+      request = await fetch(url, {"method":method, "headers":{"Content-Type":this.mediaType, "If-Modified-Since":"Thu, 1 Jan 1970 00:00:00 GMT"}});
+    else
+      request = await fetch(url, {"method":method, "headers":{"Content-Type":this.mediaType, "If-Modified-Since":"Thu, 1 Jan 1970 00:00:00 GMT"}, "body":content});
   }
   catch (exception) {
     status("Unable to submit form to URL " + this.action + ".");
 
     XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
+
+    return;
   }
+  
+  var responseText = await request.text();
+  status("Response: " + request.status + " " + request.statusText);
+  status("Headers:  " + request.headers);
+  status("Content:  " + responseText);
+      
+  // 200 is the HTTP success status code. 0 is the status code for local files.
+  if (request.status != 200 && request.status != 0) {
+    status("Status code is = " + request.status);
+    XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
+    return;
+  }
+    
+  if (responseText != "" && self.replace != "none") {
+    switch (self.replace) {
+      case "instance":
+        try {
+          // Check that the response body is XML.
+          var contentType = request.headers.get("Content-Type");
+          
+          if (!contentType.match(/(^$|[\/+]xml(;.*)?$)/)) {
+            status("Non-XML content type: " + contentType);
+            
+            XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
+            return;
+          }
+            
+          var responseXml = await xmlLoadDocument(responseText, true);
+                  
+          if (boundNode.nodeType == 9) {
+            boundNode = boundNode.documentElement;
+          }
+            
+          // If replacing the entire document, don't use replaceChild as that doesn't work in Opera.
+          if (boundNode == boundNode.ownerDocument.documentElement) {
+            // Find the instance boundNode is from and replace its XML document.
+            var instances = self.model.instances.length;
+            for (var i = 0; i < instances; i++) {
+              var instance = self.model.instances[i];
+               
+              if (instance.document == boundNode.ownerDocument) {
+                instance.document = responseXml;
+                break;
+              }
+            }
+          }
+          else {
+            var responseNode = xmlImportNode(boundNode.ownerDocument, responseXml.documentElement, true);
+              
+            boundNode.parentNode.replaceChild(responseNode, boundNode);
+          }
+            
+          XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-rebuild");
+          XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-recalculate");
+          XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-revalidate");
+          XmlEvent.dispatch(self.bind.model.htmlNode, "xforms-refresh");
+
+          break;
+        }
+        catch (exception) {
+          status("Exception thrown during submission: " + exception);
+          XmlEvent.dispatch(self.htmlNode, "xforms-submit-error");
+          return;
+        }
+          
+      case "all":
+        try {
+          var responseXml = await xmlLoadDocument(responseText, true);
+            
+          if (new XPath("boolean(xhtml:html)").evaluate(responseXml)) {
+            xform = new XForm(responseXml);
+            await XForm.initialize();
+              
+            break;
+          }
+            
+          status("Response is valid XML but not XHTML.");
+        }
+        catch (exception) {
+          status("Failed to parse response as XML (" + exception + ").");
+        }
+        var head = responseText.replace(/[\s\S]*<head[\s\S]?>/i,   "")
+                               .replace(/<\/head[\s\S]?>[\s\S]*/i, "");
+        var body = responseText.replace(/[\s\S]*<body[\s\S]?>/i,   "")
+                               .replace(/<\/body[\s\S]?>[\s\S]*/i, "");
+                                         
+        if (userAgent.isInternetExplorer) {
+          document.body.innerHTML = body;
+        }
+        else {
+          while (document.documentElement.hasChildNodes()) {
+            document.documentElement.removeChild(document.documentElement.firstChild);
+          }
+          
+          document.documentElement.appendChild(document.createElement("head"));
+          document.documentElement.appendChild(document.createElement("body"));
+            
+          document.documentElement.childNodes[0].innerHTML = head;
+          document.documentElement.childNodes[1].innerHTML = body;
+        }
+        status(xmlSerialize(document));
+        break;
+          
+      default:
+        assert(false, 'Unrecognized replace option: "' + self.replace + '".');
+    }
+  }
+    
+  XmlEvent.dispatch(self.htmlNode, "xforms-submit-done");
+
 };
 
 
-XmlEvent.define("xforms-submit", "Events", true, true, function(event) {
-  xform.getObjectForHtmlNode(event.target).submit();
+XmlEvent.define("xforms-submit", "Events", true, true, async function(event) {
+  await xform.getObjectForHtmlNode(event.target).submit();
 });
 
 XmlEvent.define("xforms-submit-done",  "Events", true, false);

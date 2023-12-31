@@ -3,7 +3,7 @@
 // Consult license.html in the documentation directory for licensing
 // information.
 
-new EventListener(window, "load", "default", functionCall(monitor, function() {
+new EventListener(window, "load", "default", async function() {
   if (!document.body) {
     document.body = document.getElementsByTagName("body")[0];
   }
@@ -22,6 +22,5 @@ new EventListener(window, "load", "default", functionCall(monitor, function() {
 //  
 //  document.body.appendChild(message);
   
-  // Initialize the page in 1ms, to give time for the message to appear.
-  setTimeout(functionCall(monitor, XForm.initialize), 1);
-}));
+  await async_monitor(XForm.initialize);
+});

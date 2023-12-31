@@ -76,6 +76,10 @@ class WebApp:
 	async def xforms_css(self, request):
 		return web.Response(body=await Path('../formfaces.min.css').read_bytes(), content_type='text/css')
 	
+	@get('/favicon.svg')
+	async def favicon_svg(self, request):
+		return web.Response(body=await Path('favicon.svg').read_bytes(), content_type='image/svg+xml')
+	
 	@post('/model.xml')
 	async def model_xml(self, request):
 		try:

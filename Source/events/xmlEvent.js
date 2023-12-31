@@ -31,20 +31,20 @@ function XmlEvent(element, name, handler, target, observer, phase, propagate, de
   this.defaultAction = defaultAction;
 };
 
-XmlEvent.parseEvents = function(element) {
-  return new XmlEventParser().parseEvents(element);
+XmlEvent.parseEvents = async function(element) {
+  return await new XmlEventParser().parseEvents(element);
 };
 
 
 function XmlEventParser() {
 };
 
-XmlEventParser.prototype.parseEvents = function(element) {
+XmlEventParser.prototype.parseEvents = async function(element) {
   var events        = [];
   var self          = this;
   
   if (element.namespaceURI == XmlNamespaces.EVENTS && element.getAttribute("event") != null) {
-    events.push(this.parseEvent(element));
+    events.push(await this.parseEvent(element));
   }
   
   var atts = element.attributes;
@@ -57,16 +57,16 @@ XmlEventParser.prototype.parseEvents = function(element) {
     }
   }
   if (eventAtt) {
-    events.push(this.parseEvent(child));
+    events.push(await this.parseEvent(child));
   }
   
-  locateEvents(element);
+  await locateEvents(element);
   
-  function locateEvents(element) {
+  async function locateEvents(element) {
     for (var child = element.firstChild; child != null; child = child.nextSibling) {
       if (child.nodeType == 1) {
         if (child.namespaceURI == XmlNamespaces.EVENTS && element.getAttribute("event") != null) {
-          events.push(self.parseEvent(child));
+          events.push(await self.parseEvent(child));
         }
         else {
           var atts = child.attributes;
@@ -79,10 +79,10 @@ XmlEventParser.prototype.parseEvents = function(element) {
             }
           }
           if (eventAtt) {
-            events.push(self.parseEvent(child));
+            events.push(await self.parseEvent(child));
           }
           else {
-            locateEvents(child);
+            await locateEvents(child);
           }
         }
       }
@@ -92,12 +92,12 @@ XmlEventParser.prototype.parseEvents = function(element) {
   return events;
 };
 
-XmlEventParser.prototype.parseEvent = function(element) {
+XmlEventParser.prototype.parseEvent = async function(element) {
   return new XmlEvent(
     element,
     
     this.parseName         (element),
-    this.parseHandler      (element),
+    await this.parseHandler      (element),
     this.parseTarget       (element),
     this.parseObserver     (element),
     this.parsePhase        (element),
@@ -110,7 +110,7 @@ XmlEventParser.prototype.parseName = function(element) {
   return this.attribute(element, "event");
 };
 
-XmlEventParser.prototype.parseHandler = function(element) {
+XmlEventParser.prototype.parseHandler = async function(element) {
   var uri = this.attribute(element, "handler", null);
   
   if (uri == null) {
@@ -129,7 +129,7 @@ XmlEventParser.prototype.parseHandler = function(element) {
     return handler;
   }
   else {
-    return this.getElementById(xmlLoadURI(uri.substring(0, uri.indexOf("#"))), id);
+    return this.getElementById(await xmlLoadURI(uri.substring(0, uri.indexOf("#"))), id);
   }
 };
 

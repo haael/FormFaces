@@ -113,7 +113,7 @@ xmlNewMSXMLDocument.programIds = [
 //
 // Exceptions:
 //     Throws an exception if there is an error loading the document.
-function xmlLoadDocument(source, stripDTD) {
+async function xmlLoadDocument(source, stripDTD) {
   if (stripDTD) {
     source = cleanXml(source);
   }
@@ -170,7 +170,7 @@ function xmlLoadDocument(source, stripDTD) {
   
   for (var i = 0; i < stylesheets.length; ++i) {
     var xslUrl      = stylesheets[i].data.replace(/^.*\bhref\s*=\s*"([^"]*)".*$/, "$1");
-    var xslDocument = xmlLoadURI(xslUrl);
+    var xslDocument = await xmlLoadURI(xslUrl);
     
     // XSL stylesheets might use the "html" method, but we need to get a strict XML
     // document, so we'll stealthily change this setting.
@@ -189,7 +189,7 @@ function xmlLoadDocument(source, stripDTD) {
       xmlDocument = xsltProcessor.transformToDocument(xmlDocument);
     }
     else if (userAgent.isInternetExplorer) {
-      xmlDocument = xmlLoadDocument(xmlDocument.transformNode(xslDocument));
+      xmlDocument = await xmlLoadDocument(xmlDocument.transformNode(xslDocument));
     }
     else {
       assert(false, "Cannot load page: XSL stylesheets are not supported in this browser.");
@@ -270,21 +270,24 @@ function xmlLoadDocument(source, stripDTD) {
 // Exceptions:
 //     Throws an XmlException if there is an error fetching the URI, or if there
 //     is an error parsing the XML document.
-function xmlLoadURI(uri) {
+async function xmlLoadURI(uri) {
   //var request = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
-  var request = userAgent.isInternetExplorer ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest(); 
+  //var request = userAgent.isInternetExplorer ? new ActiveXObject("Microsoft.XMLHTTP") : new XMLHttpRequest(); 
   
+  var response = null;
+
   try {
-    request.open("GET", uri, false);
-    request.send(null);
+    //request.open("GET", uri, false);
+    //request.send(null);
+    response = await fetch(uri);
   }
   catch (exception) {
     throw new XmlException("Error loading " + uri + ".", exception);
   }
   
-  if (request.status != 200 && request.status != 0) {
-    throw new XmlException("Error " + request.status + " loading " + uri + ": " + request.statusText);
+  if (response.status != 200 && response.status != 0) {
+    throw new XmlException("Error " + response.status + " loading " + uri + ": " + response.statusText);
   }
   
-  return xmlLoadDocument(request.responseText, true);
+  return await xmlLoadDocument(await response.text(), true);
 };

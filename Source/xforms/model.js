@@ -23,7 +23,7 @@ function XFormModel(element, instances, binds, submissions) {
 
 XFormModel.inherits(XFormObject);
 
-XFormParser.prototype.parseModels = function(element) {
+XFormParser.prototype.parseModels = async function(element) {
   for (var child = element.firstChild; child != null; child = child.nextSibling) {
     if (!XForm.isXHtmlElement(child, "head")) {
       continue;
@@ -31,7 +31,7 @@ XFormParser.prototype.parseModels = function(element) {
     
     for (var headChild = child.firstChild; headChild != null; headChild = headChild.nextSibling) {
       if (XForm.isXFormsElement(headChild, "model")) {
-        xform.models.push(this.parseModel(headChild));
+        xform.models.push(await this.parseModel(headChild));
       }
     }
     
@@ -44,8 +44,8 @@ XFormParser.prototype.parseModels = function(element) {
 };
 
 
-XFormParser.prototype.parseModel = function(element) {
-  var instances   = this.parseInstances  (element); // XForm.alertTime("Instances parsed in %t seconds.");
+XFormParser.prototype.parseModel = async function(element) {
+  var instances   = await this.parseInstances  (element); // XForm.alertTime("Instances parsed in %t seconds.");
   var binds       = this.parseBinds      (element); // XForm.alertTime("Binds parsed in %t seconds.");
   var submissions = this.parseSubmissions(element); // XForm.alertTime("Submissions parsed in %t seconds.");
 

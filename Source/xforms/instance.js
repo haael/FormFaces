@@ -16,24 +16,24 @@ function XFormInstance(element, document, source) {
 XFormInstance.inherits(XFormObject);
 
 
-XFormParser.prototype.parseInstances = function(element) {
+XFormParser.prototype.parseInstances = async function(element) {
   var instances        = [];
   
   for (var child = element.firstChild; child != null; child = child.nextSibling) {
     if (child.nodeType == 1 && child.nodeName.replace(/^.*:/, "") == "instance" && child.namespaceURI == XmlNamespaces.XFORMS) {
-      instances.push(this.parseInstance(child));
+      instances.push(await this.parseInstance(child));
     }
   }
   
   return instances;
 };
 
-XFormParser.prototype.parseInstance = function(element) {
+XFormParser.prototype.parseInstance = async function(element) {
   var srcAttribute = element.attributes.getNamedItem("src");
   var instance     = null;
   
   if (srcAttribute != null) {
-    instance = new XFormInstance(element, xmlLoadURI(srcAttribute.value), srcAttribute.value);
+    instance = new XFormInstance(element, await xmlLoadURI(srcAttribute.value), srcAttribute.value);
   }
   else {
     // We can't just use childNodes since that will include text nodes, comments,
